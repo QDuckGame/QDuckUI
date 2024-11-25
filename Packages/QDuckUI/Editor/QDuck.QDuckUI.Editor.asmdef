@@ -1,0 +1,18 @@
+{
+    "name": "QDuck.QDuckUI.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d24564cbc937b4ce7a41f318637180e8"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

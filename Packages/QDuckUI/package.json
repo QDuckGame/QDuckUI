@@ -1,0 +1,24 @@
+{
+  "name": "com.qduckgame.qduckui",
+  "version": "0.0.1",
+  "displayName": "QDuckUI",
+  "description": "This is an example package",
+  "unity": "6000.0",
+  "documentationUrl": "https://github.com/QDuckGame/QDuckUI",
+  "changelogUrl": "https://github.com/QDuckGame/QDuckUI",
+  "licensesUrl": "https://github.com/QDuckGame/QDuckUI",
+  "author": {
+    "name": "QDuck",
+    "email": "",
+    "url": "https://github.com/QDuckGame"
+  },
+
+  "samples": [
+    {
+      "displayName": "SampleUGUI",
+      "description": "sample of ugui",
+      "path": "Samples~/SampleUGUI"
+    }
+  ]
+  
+}
