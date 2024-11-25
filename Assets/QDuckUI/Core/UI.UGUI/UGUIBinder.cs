@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-namespace Duck.UI.UGUI
+namespace QDuck.UI.UGUI
 {
     public class UGUIBinder:MonoBehaviour
     {

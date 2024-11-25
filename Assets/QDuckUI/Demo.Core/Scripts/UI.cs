@@ -3,7 +3,7 @@ using UnityEditor;
 #endif
 using System;
 using UnityEngine;
-using Duck.UI;
+using QDuck.UI;
 
 namespace Demo.Core
 {

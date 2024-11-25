@@ -1,6 +1,6 @@
 
 using UnityEngine;
-using Duck.UI;
+using QDuck.UI;
 namespace Demo.Core
 {
     public partial class UI
@@ -12,7 +12,7 @@ namespace Demo.Core
         
         private static void EditorSetting()
         {
-            UISetting.UIViewGenPath = Application.dataPath + "/DuckUI/Demo.UI/UIGen";
+            UISetting.UIViewGenPath = Application.dataPath + "/QDuckUI/Demo.UI/UIGen";
             UISetting.UIViewNameSpace = "Demo";
         }
 

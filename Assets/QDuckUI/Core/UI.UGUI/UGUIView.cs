@@ -1,5 +1,5 @@
 using UnityEngine;
-namespace Duck.UI.UGUI
+namespace QDuck.UI.UGUI
 {
     public class UGUIView:IUIView
     {

@@ -9,7 +9,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-namespace Duck.UI.UGUI
+namespace QDuck.UI.UGUI
 {
     public static class UIGenEditor
     {

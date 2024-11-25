@@ -1,6 +1,6 @@
 using UnityEngine;
 using Object = System.Object;
-namespace Duck.UI.UGUI
+namespace QDuck.UI.UGUI
 {
     public class UGUILoader:IUILoader
     {

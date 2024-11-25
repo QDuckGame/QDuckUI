@@ -3,7 +3,7 @@ using UnityEditor;
 using System;
 using System.Linq;
 
-namespace Duck.UI.UGUI
+namespace QDuck.UI.UGUI
 {
 
     [CustomEditor(typeof(UGUIElement))]

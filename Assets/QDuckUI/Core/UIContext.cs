@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Pool;
 using Random = UnityEngine.Random;
-namespace Duck.UI
+namespace QDuck.UI
 {
     public class UIContext
     {

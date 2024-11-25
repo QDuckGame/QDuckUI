@@ -1,4 +1,4 @@
-using Duck.UI;
+using QDuck.UI;
 namespace Demo.Core
 {
     public class UIWindow<T>:UIPanel<T>

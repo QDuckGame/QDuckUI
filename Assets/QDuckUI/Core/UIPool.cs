@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-namespace Duck.UI
+namespace QDuck.UI
 {
     public class UIPool
     {

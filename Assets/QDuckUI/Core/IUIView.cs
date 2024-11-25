@@ -1,5 +1,5 @@
 using System;
-namespace Duck.UI
+namespace QDuck.UI
 {
     public interface IUIView
     {

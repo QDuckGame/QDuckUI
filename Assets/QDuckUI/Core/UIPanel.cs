@@ -2,7 +2,7 @@ using System;
 using Demo.Core;
 using UnityEngine;
 using Object = System.Object;
-namespace Duck.UI
+namespace QDuck.UI
 {
     public enum UIState
     {

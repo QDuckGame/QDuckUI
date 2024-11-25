@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEditor;
-namespace Duck.UI.UGUI
+namespace QDuck.UI.UGUI
 {
     [InitializeOnLoad]
     public static class HierarchyNameColor

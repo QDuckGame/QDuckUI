@@ -1,5 +1,5 @@
-using Duck.UI;
-using Duck.UI.UGUI;
+using QDuck.UI;
+using QDuck.UI.UGUI;
 using System;
 using UnityEngine;
 using Object = UnityEngine.Object;
