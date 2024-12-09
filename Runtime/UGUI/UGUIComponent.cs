@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine;
 namespace QDuck.UI
 {
-    public class UGUIElement:MonoBehaviour
+    public class UGUIComponent:MonoBehaviour
     {
 #if UNITY_EDITOR
         public string generateType;

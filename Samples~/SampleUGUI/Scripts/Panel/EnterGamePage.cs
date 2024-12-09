@@ -1,14 +1,13 @@
 using Game.Core;
-using Game.PanelGen;
 
 namespace Game.Panel
 {
-    public class EnterGamePage:UIPage<EnterGamePageView>
+    public partial class EnterGamePage:UIPage
     {
         protected override void OnAwake()
         {
             base.OnAwake();
-            View.EnterBtn.onClick.AddListener(OnClickEnterBtn);
+            EnterBtn.onClick.AddListener(OnClickEnterBtn);
         }
 
         private void OnClickEnterBtn()

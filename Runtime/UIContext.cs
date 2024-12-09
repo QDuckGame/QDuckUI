@@ -236,10 +236,9 @@ namespace QDuck.UI
 
         #region UILoader
 
-        public void LoadUIView<T>(string uiName, Action<IUIView> callback)
-            where T : IUIView, new()
+        public void LoadUIView(string uiName, Action<IUIBehavior> callback)
         {
-            _uiLoader.Get<T>(uiName, callback);
+            _uiLoader.Get(uiName, callback);
         }
 
         #endregion

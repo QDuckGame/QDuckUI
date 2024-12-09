@@ -1,15 +1,15 @@
 using Game.Core;
-using Game.PanelGen;
+using Game.Panel;
 
 namespace Game.Panel
 {
-    public class Windows1:UIWindow<Windows1View>
+    public partial class Windows1:UIWindow
     {
         protected override void OnAwake()
         {
             base.OnAwake();
-            View.OpenWin2Btn.onClick.AddListener(OnClickOpenWin2Btn);
-            View.CloseBtn.onClick.AddListener(OnClickCloseBtn);
+            OpenWin2Btn.onClick.AddListener(OnClickOpenWin2Btn);
+            CloseBtn.onClick.AddListener(OnClickCloseBtn);
         }
 
         private void OnClickOpenWin2Btn()

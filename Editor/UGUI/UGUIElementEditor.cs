@@ -6,7 +6,7 @@ using System.Linq;
 namespace QDuck.UI.UGUI
 {
 
-    [CustomEditor(typeof(UGUIElement))]
+    [CustomEditor(typeof(UGUIComponent))]
     public class UGUIElementEditor : Editor
     {
         private string[] componentTypes;
@@ -14,9 +14,9 @@ namespace QDuck.UI.UGUI
 
         private void OnEnable()
         {
-            UGUIElement element = (UGUIElement)target;
-            componentTypes = element.GetComponents<Component>()
-                .Where(c => c.GetType() != typeof(UGUIElement))
+            UGUIComponent component = (UGUIComponent)target;
+            componentTypes = component.GetComponents<Component>()
+                .Where(c => c.GetType() != typeof(UGUIComponent))
                 .Select(c => c.GetType().Name)
                 .ToArray();
             selectedIndex = componentTypes.Length - 1; // Set the last component as the default selected element
@@ -24,12 +24,12 @@ namespace QDuck.UI.UGUI
 
         public override void OnInspectorGUI()
         {
-            UGUIElement element = (UGUIElement)target;
+            UGUIComponent component = (UGUIComponent)target;
 
             if (componentTypes.Length > 0)
             {
                 selectedIndex = EditorGUILayout.Popup("Component Type", selectedIndex, componentTypes);
-                element.generateType = componentTypes[selectedIndex];
+                component.generateType = componentTypes[selectedIndex];
             }
             else
             {

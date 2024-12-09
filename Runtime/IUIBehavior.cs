@@ -1,13 +1,12 @@
 using System;
 namespace QDuck.UI
 {
-    public interface IUIView
+    public interface IUIBehavior
     {
         void SetActive(bool active);
         bool IsActive();
         void Destroy();
-        IUIView Clone();
-        void Bind(IUIBinder gameObject);
-        IUIBinder GetBinder();
+        IUIBehavior Clone();
+        Object GetBindComponent(int index);
     }
 }

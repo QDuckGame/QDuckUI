@@ -4,8 +4,7 @@ namespace QDuck.UI
 {
     public class UGUILoader:IUILoader
     {
-        public void Get<T>(string uiName, System.Action<IUIView> callback)
-            where T:IUIView, new()
+        public void Get(string uiName, System.Action<IUIBehavior> callback)
         {
             LoadRes(uiName, (obj) =>
             {
@@ -15,9 +14,7 @@ namespace QDuck.UI
                     callback?.Invoke(null);
                     return;
                 }
-                T view = new T();
-                view.Bind(go.GetComponent<UGUIBinder>());
-                callback?.Invoke(view);
+                callback?.Invoke(go.GetComponent<UGUIBehavior>());
             });
         }
     

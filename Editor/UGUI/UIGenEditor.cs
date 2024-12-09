@@ -27,10 +27,10 @@ namespace QDuck.UI.UGUI
 
         private static void GenerateClassFromPrefab(GameObject prefab)
         {
-            UGUIBinder binder = prefab.GetComponent<UGUIBinder>();
-            if (binder == null)
+            UGUIBehavior behavior = prefab.GetComponent<UGUIBehavior>();
+            if (behavior == null)
             {
-                binder =prefab.AddComponent<UGUIBinder>();
+                behavior =prefab.AddComponent<UGUIBehavior>();
                 PrefabUtility.SavePrefabAsset(prefab);
                 AssetDatabase.Refresh();
             }
@@ -39,29 +39,32 @@ namespace QDuck.UI.UGUI
             StringBuilder classBuilder = new StringBuilder();
             StringBuilder initValuesBuilder = new StringBuilder();
             string className = prefab.name;
+            
+            classBuilder.AppendLine("using UnityEngine;");
+            classBuilder.AppendLine("using QDuck.UI;");
+            classBuilder.AppendLine();
+            
             if (!string.IsNullOrEmpty(UISetting.UIViewNameSpace))
             {
                 classBuilder.AppendLine($"namespace {UISetting.UIViewNameSpace}");
                 classBuilder.AppendLine("{");
             }
-            classBuilder.AppendLine("using UnityEngine;");
-            classBuilder.AppendLine("using QDuck.UI;");
-            classBuilder.AppendLine();
-            classBuilder.AppendLine($"public class {className}View : UGUIView");
-            classBuilder.AppendLine("{");
+
+            classBuilder.AppendLine($"    public partial class {className} : IUIComponentBinder");
+            classBuilder.AppendLine("    {");
             int index = 0;
             foreach (Transform child in prefab.GetComponentsInChildren<Transform>(true))
             {
                 if (child == prefab.transform) continue;
                 var belongPrefab = PrefabUtility.GetOutermostPrefabInstanceRoot(child);
-                var element = child.GetComponent<UGUIElement>();
+                var element = child.GetComponent<UGUIComponent>();
                 bool isParts = false;
                 string generateType = "";
                 if (belongPrefab != null)
                 {
                     if(belongPrefab != child.gameObject)continue;
-                    UGUIBinder childBinder = belongPrefab.GetComponent<UGUIBinder>();
-                    if (element!=null && childBinder!=null&& element.generateType == typeof(UGUIBinder).Name)
+                    UGUIBehavior childBehavior = belongPrefab.GetComponent<UGUIBehavior>();
+                    if (element!=null && childBehavior!=null&& element.generateType == typeof(UGUIBehavior).Name)
                     {
                         GameObject generateClassFromPrefab = PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject);
                         generateType = generateClassFromPrefab.name;
@@ -79,29 +82,28 @@ namespace QDuck.UI.UGUI
                     continue;
                 }
                 string typeName = component.GetType().FullName;
-                if(isParts) typeName = generateType+"View";
+                if(isParts) typeName = generateType;
                 
                 string fieldName = child.name.Replace(" ", "_");
-                classBuilder.AppendLine($"    public {typeName} {fieldName};");
+                classBuilder.AppendLine($"        public {typeName} {fieldName};");
                 if (isParts)
                 {
-                    initValuesBuilder.AppendLine($"        {fieldName} = new {typeName}();");
-                    initValuesBuilder.AppendLine($"        {fieldName}.Bind(_binder.Components[{index}] as UGUIBinder);");
+                    initValuesBuilder.AppendLine($"            {fieldName} = panel.BindBehaviour<{typeName}>(uiBehavior.GetBindComponent({index}) as UGUIBehavior);");
                 }
                 else
                 {
-                    initValuesBuilder.AppendLine($"        {fieldName} = _binder.Components[{index}] as {typeName};");
+                    initValuesBuilder.AppendLine($"            {fieldName} = uiBehavior.GetBindComponent({index}) as {typeName};");
                 }
                 components.Add(component);
                 index++;
             }
-            binder.Components = components.ToArray();
-            classBuilder.AppendLine("    protected override void OnBind()");
-            classBuilder.AppendLine("    {");
+            behavior.Components = components.ToArray();
+            classBuilder.AppendLine("        public void BindComponents(IUIBehavior uiBehavior,UIPanel panel)");
+            classBuilder.AppendLine("        {");
             classBuilder.AppendLine(initValuesBuilder.ToString());
-            classBuilder.AppendLine("    }");
+            classBuilder.AppendLine("        }");
         
-            classBuilder.AppendLine("}");
+            classBuilder.AppendLine("    }");
             if (!string.IsNullOrEmpty(UISetting.UIViewNameSpace))
             {
                 classBuilder.AppendLine("}");
@@ -112,7 +114,7 @@ namespace QDuck.UI.UGUI
             {
                 Directory.CreateDirectory(dirPath);
             }
-            string path = Path.Combine(dirPath, $"{className}View.cs");
+            string path = Path.Combine(dirPath, $"{className}Partial.cs");
             File.WriteAllText(path, classBuilder.ToString());
             PrefabUtility.SavePrefabAsset(prefab);
             AssetDatabase.Refresh();

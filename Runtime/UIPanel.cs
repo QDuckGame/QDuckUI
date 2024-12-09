@@ -27,7 +27,7 @@ namespace QDuck.UI
 
         public virtual int CacheCount => UISetting.DefaultCacheCount;
 
-        protected IUIView _iView { get; private set; }
+        protected IUIBehavior _uiBehaviour { get; private set; }
 
         private string _uiPath;
         private int _index;
@@ -36,17 +36,7 @@ namespace QDuck.UI
 
         public UIPanelInfo Info { get; private set; }
 
-        private Dictionary<IUIView,UIPanel> _panelPartsDic;
-
-        private Dictionary<IUIView, UIPanel> PanelPartsDic
-        {
-            get
-            {
-                if(_panelPartsDic ==  null)
-                    _panelPartsDic = new Dictionary<IUIView, UIPanel>();
-                return _panelPartsDic;
-            }
-        }
+        private List<UIPanel> _children;
         
         internal void Init(UIPanelInfo info, UIContext context)
         {
@@ -60,10 +50,9 @@ namespace QDuck.UI
             {
                 State = UIState.Awaking;
                 BeforeCreate();
-
-                LoadUIView(Info.Path, (IUIView iview) =>
+                _context.LoadUIView(Info.Path, (uiBehaviour) =>
                 {
-                    _iView = iview;
+                    _uiBehaviour = uiBehaviour;
                     Awake();
                     complete?.Invoke();
                 });
@@ -78,26 +67,34 @@ namespace QDuck.UI
         {
             if(State<UIState.Awaked)return;
             State = UIState.Opening;
-            _iView.SetActive(true);
+            _uiBehaviour.SetActive(true);
             if(isPlayTween)OnPlayOpenTween();
-            OnOpen();
-            if (_panelPartsDic != null)
+            if (_children != null)
             {
-                foreach (var part in _panelPartsDic)
+                foreach (var child in _children)
                 {
-                    part.Value.OnPlayOpenTween();
-                    part.Value.Open(isPlayTween);
+                    child.OnPlayOpenTween();
+                }
+                foreach (var child in _children)
+                {
+                    child.Open(isPlayTween);
                 }
             }
+            OnOpen();
+
             State = UIState.Opened;
         }
 
         internal void Awake()
         {
             SetFullScreenBlock(Info.BlockRaycast);
+            if (this is IUIComponentBinder binder)
+            {
+                binder.BindComponents(_uiBehaviour,this);
+            }
+            if(_children!=null)
+                foreach (var child in _children)child.Awake();
             OnAwake();
-            if(_panelPartsDic!=null)
-                foreach (var part in _panelPartsDic)part.Value.Awake();
             State = UIState.Awaked;
         }
 
@@ -107,10 +104,10 @@ namespace QDuck.UI
             State = UIState.Closing;
             OnPlayCloseTween(() =>
             {
+                if(_children!=null)
+                    foreach (var child in _children)child.Close(isPlayTween);
                 OnClose();
-                _iView.SetActive(false);
-                if(_panelPartsDic!=null)
-                    foreach (var part in _panelPartsDic)part.Value.Close(isPlayTween);
+                _uiBehaviour.SetActive(false);
                 State = UIState.Closed;
                 complete?.Invoke();
             });
@@ -130,9 +127,9 @@ namespace QDuck.UI
         
         private void ForceDestroy()
         {
-            if (_iView != null)
+            if (_uiBehaviour != null)
             {
-                _iView.Destroy();
+                _uiBehaviour.Destroy();
                 OnDestroy();
             }
             State = UIState.Destroyed;
@@ -195,85 +192,58 @@ namespace QDuck.UI
         {
             
         }
+        
+        #region Panel children
 
-        protected virtual void LoadUIView(string uiName, Action<IUIView> callback)
+        public UIPanel GetChildPanel(IUIBehavior uiBehavior)
         {
+            if(_children == null)return null;
+            foreach (var child in _children)
+            {
+                if(child._uiBehaviour == uiBehavior)return child;
+            }
+            return null;
+        }
+
+        public void AddChild(UIPanel child)
+        {
+            if(GetChildPanel(child._uiBehaviour)!=null)return;
+            if(_children == null)_children = new List<UIPanel>();
+            _children.Add(child);
         }
         
-        #region PanelParts
-
-        protected T BindParts<T>(IUIView view)
+        public T BindBehaviour<T>(IUIBehavior  uiBehavior)
             where T : UIPanel, new()
         {
-            T target;
-            if (PanelPartsDic.TryGetValue(view, out var value))
+            UIPanel child = GetChildPanel(uiBehavior);
+            if (child !=null)
             {
-                return value as T;
+                return child as T;
             }
-            else
-            {
-                target = new T();
-                target._context = _context;
-                target.State = UIState.Awaking;
-                target.BeforeCreate();
-                target._iView = view;
-                PanelPartsDic.Add(view, target);
-                if(State >= UIState.Awaked)target.Awake();
-                if(State >= UIState.Opened ) target.Open( false);
-                if(State >= UIState.Closed) target.Close(false);
-               
-            }
-            return target;
-        }
-
-        protected T CloneAndBindParts<T>(IUIView view)
-            where T : UIPanel, new()
-        {
-            var cloneView = view.Clone();
-            return BindParts<T>(cloneView);
+            
+            T t = new T();
+            t._context = _context;
+            t.State = UIState.Awaking;
+            t.BeforeCreate();
+            t._uiBehaviour = uiBehavior;
+            if(_children == null)_children = new List<UIPanel>();
+            _children.Add(t);
+            if(State >= UIState.Awaked)t.Awake();
+            if(State >= UIState.Opened ) t.Open( false);
+            if(State >= UIState.Closed) t.Close(false);
+            return t;
         }
         
-        protected void CreateAndBindParts<T,K>(string uiPath,Action<T> callback)
-            where T : UIPanel<K>, new()
-            where K:  IUIView, new()
+        public void CreateChild<T>(string uiPath,Action<T> callback =null)
+            where T : UIPanel, new()
         {
-            _context.LoadUIView<K>(uiPath, (uiview) =>
+            _context.LoadUIView(uiPath, (uiBehaviour) =>
             {
-                callback?.Invoke( BindParts<T>(uiview));
+                callback?.Invoke( BindBehaviour<T>(uiBehaviour));
             });
         }
 
         #endregion
 
     }
-
-    public class UIPanel<T> : UIPanel
-        where T : IUIView, new()
-    {
-        private T _view;
-
-        protected T View
-        {
-            get
-            {
-                if (_view == null)
-                {
-                    _view = (T)_iView;
-                }
-
-                return _view;
-            }
-        }
-
-        protected sealed override void LoadUIView(string uiName, Action<IUIView> callback)
-        {
-            _context.LoadUIView<T>(uiName, callback);
-        }
-
-    }
-    
-    
-    
-    
-    
 }

@@ -1,8 +1,7 @@
 using QDuck.UI;
 namespace Game.Core
 {
-    public class UIWindow<T>:UGUIPanel<T>
-    where T: UGUIView, new()
+    public class UIWindow:UGUIPanel
     {
         private static UIPanelStackInfo UIWindowConfig = new UIPanelStackInfo()
         {

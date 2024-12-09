@@ -13,7 +13,7 @@ namespace Game.Core
         private static void EditorSetting()
         {
             UISetting.UIViewGenPath = Application.dataPath + "/Samples/QDuckUI/0.0.1/SampleUGUI/Scripts/PanelGen";
-            UISetting.UIViewNameSpace = "Game.PanelGen";
+            UISetting.UIViewNameSpace = "Game.Panel";
         }
 
         private static void PanelsSetting(UIContext uiContext)

@@ -15,7 +15,7 @@ namespace QDuck.UI.UGUI
             GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
             if (obj != null)
             {
-                var elementType = obj.GetComponent<UGUIElement>();
+                var elementType = obj.GetComponent<UGUIComponent>();
             
                 if (elementType!= null)
                 {

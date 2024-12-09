@@ -4,19 +4,34 @@ using UnityEngine.Playables;
 
 namespace QDuck.UI
 {
-    public class UGUIPanel<T>:UIPanel<T>
-        where T : UGUIView, new()
+    public class UGUIPanel:UIPanel
     {
         private Animator _rootAnimator;
         
         private PlayableDirector _openPlayable;
         private PlayableDirector _closePlayable;
+
+        private UGUIBehavior _uguiBehavior;
+
+        protected UGUIBehavior UGUIBehavior
+        {
+            get
+            {
+                if (_uguiBehavior == null)
+                {
+                    _uguiBehavior = _uiBehaviour as UGUIBehavior;
+                }
+                return _uguiBehavior;
+            }
+        }
+
+        protected GameObject Go => UGUIBehavior.gameObject;
         
         protected override void OnPlayOpenTween(Action onFinish = null)
         {
             StopPlayables();
             if(_openPlayable==null)
-                _openPlayable = View.GameObject.transform.Find("OpenTimeline")?.GetComponent<PlayableDirector>();
+                _openPlayable = Go.transform.Find("OpenTimeline")?.GetComponent<PlayableDirector>();
             if(_openPlayable == null)
             {
                 onFinish?.Invoke();
@@ -37,7 +52,7 @@ namespace QDuck.UI
         {
             StopPlayables();
             if(_closePlayable == null)
-                _closePlayable = View.GameObject.transform.Find("CloseTimeline")?.GetComponent<PlayableDirector>();
+                _closePlayable = Go.transform.Find("CloseTimeline")?.GetComponent<PlayableDirector>();
             if(_closePlayable == null)
             {
                 onFinish?.Invoke();
@@ -75,7 +90,7 @@ namespace QDuck.UI
             {
                 // 创建一个新的 GameObject
                 blocker = new GameObject("FullScreenBlocker");
-                blocker.transform.SetParent(View.GameObject.transform, false);
+                blocker.transform.SetParent(Go.transform, false);
                 blocker.transform.SetAsFirstSibling();
 
                 // 设置 RectTransform 以覆盖整个屏幕

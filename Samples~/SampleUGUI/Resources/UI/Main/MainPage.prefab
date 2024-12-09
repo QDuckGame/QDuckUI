@@ -1408,7 +1408,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2be29eeaa5e04d95a6d8291f433b5bf3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  generateType: UGUIBinder
+  generateType: UGUIBehavior
 --- !u!224 &4533040897376691580 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 6240682120261184187, guid: 8ec1b319d39844214acd796dbb599b74, type: 3}
