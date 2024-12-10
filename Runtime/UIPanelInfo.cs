@@ -7,7 +7,7 @@ namespace QDuck.UI
         Push,
     }
 
-    public struct UIPanelStackInfo
+    public partial class UIPanelStackInfo
     {
         public int Priority;
         public bool Compare;
@@ -15,7 +15,7 @@ namespace QDuck.UI
 
     }
 
-    public struct UIPanelInfo
+    public partial class UIPanelInfo
     {
         public int Id;
         public string Path;

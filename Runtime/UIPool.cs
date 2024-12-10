@@ -14,9 +14,8 @@ namespace QDuck.UI
             _dic = new Dictionary<Type, Queue<UIPanel>>();
         }
     
-        public UIPanel Get<T>(UIPanelInfo info)where T : UIPanel, new()
+        public UIPanel Get(Type type)
         {
-            Type type = typeof(T);
             UIPanel uiPanel = null;
             if (_dic.ContainsKey(type))
             {
@@ -29,11 +28,21 @@ namespace QDuck.UI
             //new T 时传入context
             if (uiPanel == null)
             {
-                uiPanel = new T();
-                uiPanel.Init(info,_uiContext);
+                uiPanel = Activator.CreateInstance(type) as UIPanel;
+                uiPanel.Init(_uiContext);
             }
             uiPanel.UIIndex = ++_generateIndex;
             return uiPanel;
+        }
+        
+        
+        public bool Contains(Type type)
+        {
+            if(_dic.TryGetValue(type, out Queue<UIPanel> list))
+            {
+                return list.Count > 0;
+            }
+            return false;
         }
     
         public bool TryRecycle(UIPanel uiPanel)

@@ -25,7 +25,7 @@ namespace QDuck.UI
             _uiLoader = uiLoader;
         }
 
-        public int OpenPanel<T>(string uiName) where T : UIPanel, new()
+        public int OpenPanel(Type type)
         {
             UIContext context = this;
             UIPanel curPanel = null;
@@ -35,7 +35,7 @@ namespace QDuck.UI
             {
                 if (curPanel == null) //not find
                 {
-                    if (_panelHideStack[i] is T)
+                    if (_panelHideStack[i].GetType() == type)
                     {
                         startIndex = i;
                         curPanel = _panelHideStack[i];
@@ -52,7 +52,7 @@ namespace QDuck.UI
 
             if (_tmpList.Count > 0) _panelHideStack.RemoveRange(startIndex - _tmpList.Count + 1, _tmpList.Count);
             if (curPanel == null)
-                curPanel = Pool.Get<T>(GetPanelInfo(uiName));
+                curPanel = Pool.Get(type);
 
             int needRemoveCount = 0;
             for (int i = _panelHideStack.Count - 1; i >= 0; i--)
@@ -84,7 +84,7 @@ namespace QDuck.UI
         {
             if (panel.State == UIState.None)
             {
-                panel.Create(() =>
+                panel.Create((p) =>
                 {
                     panel.Open(true);
                 });

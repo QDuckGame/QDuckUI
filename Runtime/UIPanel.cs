@@ -19,55 +19,63 @@ namespace QDuck.UI
 
     public abstract class UIPanel
     {
+        public string UIName { get; private set; }
+        
         protected UIContext _context;
 
         public int UIIndex { get; internal set; }
         public UIState State { get; private set; }
         public virtual UIPanelStackInfo StackInfo { get; }
-
         public virtual int CacheCount => UISetting.DefaultCacheCount;
-
-        protected IUIBehavior _uiBehaviour { get; private set; }
-
-        private string _uiPath;
+        public IUIBehavior UIBehaviour { get; private set; }
         private int _index;
-
         public bool IsActive => State == UIState.Opened;
-
-        public UIPanelInfo Info { get; private set; }
-
+        private UIPanelInfo _info;
+        public UIPanelInfo Info
+        {
+            get
+            {
+                if (_info == null)
+                {
+                    _info = _context.GetPanelInfo(this.GetType().Name);
+                    if (_info == null) _info = new UIPanelInfo();
+                }
+                return _info;
+            }
+        }
+        private UIPool _childPool;
         private List<UIPanel> _children;
         
-        internal void Init(UIPanelInfo info, UIContext context)
+        internal void Init( UIContext context)
         {
             _context = context;
-            Info = info;
+            UIName = GetType().Name;
         }
         
-        internal void Create(Action complete)
+        internal void Create(Action<UIPanel> complete)
         {
             if (State == UIState.None)
             {
                 State = UIState.Awaking;
                 BeforeCreate();
-                _context.LoadUIView(Info.Path, (uiBehaviour) =>
+                _context.LoadUIView(UIName, (uiBehaviour) =>
                 {
-                    _uiBehaviour = uiBehaviour;
+                    UIBehaviour = uiBehaviour;
                     Awake();
-                    complete?.Invoke();
+                    complete?.Invoke(this);
                 });
             }
             else
             {
-                complete?.Invoke();
+                complete?.Invoke(this);
             }
         }
 
-        internal void Open(bool isPlayTween = true)
+        public void Open(bool isPlayTween = true)
         {
             if(State<UIState.Awaked)return;
             State = UIState.Opening;
-            _uiBehaviour.SetActive(true);
+            UIBehaviour.SetActive(true);
             if(isPlayTween)OnPlayOpenTween();
             if (_children != null)
             {
@@ -90,12 +98,20 @@ namespace QDuck.UI
             SetFullScreenBlock(Info.BlockRaycast);
             if (this is IUIComponentBinder binder)
             {
-                binder.BindComponents(_uiBehaviour,this);
+                binder.BindComponents(UIBehaviour,this);
             }
             if(_children!=null)
                 foreach (var child in _children)child.Awake();
             OnAwake();
             State = UIState.Awaked;
+        }
+        
+        public void Refresh()
+        {
+            if (State == UIState.Opened)
+            {
+                OnRefresh();
+            }
         }
 
         internal void Close(bool isPlayTween, Action complete = null)
@@ -107,7 +123,7 @@ namespace QDuck.UI
                 if(_children!=null)
                     foreach (var child in _children)child.Close(isPlayTween);
                 OnClose();
-                _uiBehaviour.SetActive(false);
+                UIBehaviour.SetActive(false);
                 State = UIState.Closed;
                 complete?.Invoke();
             });
@@ -127,9 +143,9 @@ namespace QDuck.UI
         
         private void ForceDestroy()
         {
-            if (_uiBehaviour != null)
+            if (UIBehaviour != null)
             {
-                _uiBehaviour.Destroy();
+                UIBehaviour.Destroy();
                 OnDestroy();
             }
             State = UIState.Destroyed;
@@ -170,6 +186,11 @@ namespace QDuck.UI
         protected virtual void OnOpen()
         {
         }
+
+        protected virtual void OnRefresh()
+        {
+            
+        }
         
         protected virtual void AfterOpenTween()
         {
@@ -200,47 +221,77 @@ namespace QDuck.UI
             if(_children == null)return null;
             foreach (var child in _children)
             {
-                if(child._uiBehaviour == uiBehavior)return child;
+                if(child.UIBehaviour == uiBehavior)return child;
             }
             return null;
         }
 
         public void AddChild(UIPanel child)
         {
-            if(GetChildPanel(child._uiBehaviour)!=null)return;
+            if(GetChildPanel(child.UIBehaviour)!=null)return;
             if(_children == null)_children = new List<UIPanel>();
             _children.Add(child);
         }
         
-        public T BindBehaviour<T>(IUIBehavior  uiBehavior)
-            where T : UIPanel, new()
+        public void RemoveChild(UIPanel child)
+        {
+            if (_children != null)
+            {
+                _children.Remove(child);
+            }
+            TryRecycle(child);
+        }
+        
+        public UIPanel BindBehaviour<T>(IUIBehavior  uiBehavior)
+        where T : UIPanel,new()
+        {
+            return BindBehaviour(typeof(T), uiBehavior);
+        }
+        
+        public UIPanel BindBehaviour(Type type, IUIBehavior  uiBehavior)
         {
             UIPanel child = GetChildPanel(uiBehavior);
             if (child !=null)
             {
-                return child as T;
+                return child;
             }
             
-            T t = new T();
-            t._context = _context;
-            t.State = UIState.Awaking;
-            t.BeforeCreate();
-            t._uiBehaviour = uiBehavior;
+            UIPanel p = Activator.CreateInstance(type) as UIPanel;
+            p._context = _context;
+            p.State = UIState.Awaking;
+            p.BeforeCreate();
+            p.UIBehaviour = uiBehavior;
             if(_children == null)_children = new List<UIPanel>();
-            _children.Add(t);
-            if(State >= UIState.Awaked)t.Awake();
-            if(State >= UIState.Opened ) t.Open( false);
-            if(State >= UIState.Closed) t.Close(false);
-            return t;
+            _children.Add(p);
+            if(State >= UIState.Awaked)p.Awake();
+            if(State >= UIState.Opened ) p.Open( false);
+            if(State >= UIState.Closed) p.Close(false);
+            return p;
         }
         
-        public void CreateChild<T>(string uiPath,Action<T> callback =null)
-            where T : UIPanel, new()
+        public void CreateChild(Type type, Action<UIPanel> callback =null)
         {
-            _context.LoadUIView(uiPath, (uiBehaviour) =>
+            GetPanelFormPool(type).Create((panel) =>
             {
-                callback?.Invoke( BindBehaviour<T>(uiBehaviour));
+                callback?.Invoke(panel);
             });
+        }
+
+        public UIPanel GetPanelFormPool(Type type)
+        {
+            if(_childPool == null)_childPool = new UIPool(_context);
+            return _childPool.Get(type);
+        }
+
+        public bool ContainsInPool(Type type)
+        {
+           return _childPool.Contains(type);
+        }
+
+        public bool TryRecycle(UIPanel uiPanel)
+        {
+            if(_childPool == null)_childPool = new UIPool(_context);
+            return _childPool.TryRecycle(uiPanel);
         }
 
         #endregion
