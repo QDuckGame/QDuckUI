@@ -19,9 +19,14 @@ namespace QDuck.UI
 
     public abstract class UIPanel
     {
-        public string UIName { get; private set; }
+        public virtual string UIPath => $"{UIName}.prefab";
+        public virtual bool NeedRetain => false;
+        public virtual bool BlockRaycast => true;
+        public virtual int SortOrder => 0;
         
+        public string UIName { get; private set; }
         protected UIContext _context;
+        protected object _data;
 
         public int UIIndex { get; internal set; }
         public UIState State { get; private set; }
@@ -30,19 +35,7 @@ namespace QDuck.UI
         public IUIBehavior UIBehaviour { get; private set; }
         private int _index;
         public bool IsActive => State == UIState.Opened;
-        private UIPanelInfo _info;
-        public UIPanelInfo Info
-        {
-            get
-            {
-                if (_info == null)
-                {
-                    _info = _context.GetPanelInfo(this.GetType().Name);
-                    if (_info == null) _info = new UIPanelInfo();
-                }
-                return _info;
-            }
-        }
+        
         private UIPool _childPool;
         private List<UIPanel> _children;
         
@@ -58,9 +51,16 @@ namespace QDuck.UI
             {
                 State = UIState.Awaking;
                 BeforeCreate();
-                _context.LoadUIView(UIName, (uiBehaviour) =>
+                LoadRes<GameObject>(UIPath, (prefab) =>
                 {
-                    UIBehaviour = uiBehaviour;
+                    GameObject go = GameObject.Instantiate(prefab);
+                    if (go == null)
+                    {
+                        complete?.Invoke(null);
+                        return;
+                    }
+                    go.transform.SetParent(_context.transform, false);
+                    UIBehaviour = go.GetComponent<IUIBehavior>();
                     Awake();
                     complete?.Invoke(this);
                 });
@@ -70,10 +70,22 @@ namespace QDuck.UI
                 complete?.Invoke(this);
             }
         }
+        
+        protected virtual void LoadRes<T>(string path, Action<T> callback)
+            where T : UnityEngine.Object
+        {
+            
+        }
+        
+        protected virtual void ReleaseRes()
+        {
+            
+        }
 
-        public void Open(bool isPlayTween = true)
+        public void Open(object data, bool isPlayTween = true)
         {
             if(State<UIState.Awaked)return;
+            if(data!=null)_data = data;
             State = UIState.Opening;
             UIBehaviour.SetActive(true);
             if(isPlayTween)OnPlayOpenTween();
@@ -85,7 +97,7 @@ namespace QDuck.UI
                 }
                 foreach (var child in _children)
                 {
-                    child.Open(isPlayTween);
+                    child.Open(data,isPlayTween);
                 }
             }
             OnOpen();
@@ -95,7 +107,7 @@ namespace QDuck.UI
 
         internal void Awake()
         {
-            SetFullScreenBlock(Info.BlockRaycast);
+            SetFullScreenBlock(BlockRaycast);
             if (this is IUIComponentBinder binder)
             {
                 binder.BindComponents(UIBehaviour,this);
@@ -117,6 +129,7 @@ namespace QDuck.UI
         internal void Close(bool isPlayTween, Action complete = null)
         {
             if(State<UIState.Opened)return;
+            _data = null;
             State = UIState.Closing;
             OnPlayCloseTween(() =>
             {
@@ -145,8 +158,9 @@ namespace QDuck.UI
         {
             if (UIBehaviour != null)
             {
-                UIBehaviour.Destroy();
                 OnDestroy();
+                ReleaseRes();
+                UIBehaviour.Destroy();
             }
             State = UIState.Destroyed;
         }
@@ -160,8 +174,7 @@ namespace QDuck.UI
             }
             else
             {
-                OnDestroy();
-                State = UIState.Destroyed;
+                ForceDestroy();
             }
         }
 
@@ -242,10 +255,10 @@ namespace QDuck.UI
             TryRecycle(child);
         }
         
-        public UIPanel BindBehaviour<T>(IUIBehavior  uiBehavior)
+        public T BindBehaviour<T>(IUIBehavior  uiBehavior)
         where T : UIPanel,new()
         {
-            return BindBehaviour(typeof(T), uiBehavior);
+            return BindBehaviour(typeof(T), uiBehavior) as T;
         }
         
         public UIPanel BindBehaviour(Type type, IUIBehavior  uiBehavior)
@@ -264,7 +277,7 @@ namespace QDuck.UI
             if(_children == null)_children = new List<UIPanel>();
             _children.Add(p);
             if(State >= UIState.Awaked)p.Awake();
-            if(State >= UIState.Opened ) p.Open( false);
+            if(State >= UIState.Opened ) p.Open( null,false);
             if(State >= UIState.Closed) p.Close(false);
             return p;
         }
@@ -285,6 +298,7 @@ namespace QDuck.UI
 
         public bool ContainsInPool(Type type)
         {
+            if (_childPool == null) return false;
            return _childPool.Contains(type);
         }
 

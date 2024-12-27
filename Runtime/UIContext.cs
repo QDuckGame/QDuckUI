@@ -6,7 +6,7 @@ using UnityEngine.Pool;
 using Random = UnityEngine.Random;
 namespace QDuck.UI
 {
-    public class UIContext
+    public class UIContext:MonoBehaviour
     {
         internal UIPool Pool { get; private set; }
 
@@ -15,17 +15,18 @@ namespace QDuck.UI
         private List<UIPanel> _panelHideStack = new List<UIPanel>();
         private List<UIPanel> _tmpList = new List<UIPanel>();
 
-        private IUILoader _uiLoader;
+        public List<UIPanel> PanelDisplays => _panelDisplayQueue;
 
-        private Dictionary<string, UIPanelInfo> _panelInfoDic = new Dictionary<string, UIPanelInfo>();
-
-        public UIContext(IUILoader uiLoader)
+        public static UIContext Create(string name = "[UIContext]")
         {
-            Pool = new UIPool(this);
-            _uiLoader = uiLoader;
+            GameObject go = new GameObject(name);
+            GameObject.DontDestroyOnLoad(go);
+            UIContext context = go.AddComponent<UIContext>();
+            context.Pool = new UIPool(context);
+            return context;
         }
 
-        public int OpenPanel(Type type)
+        public UIPanel OpenPanel(Type type ,object data)
         {
             UIContext context = this;
             UIPanel curPanel = null;
@@ -73,24 +74,24 @@ namespace QDuck.UI
             HandleDisplayToHideStack(curPanel);
             foreach (var panel in _tmpList)
             {
-                OpenPanel(panel);
+                OpenPanel(panel,null);
                 _panelDisplayQueue.Add(panel);
             }
-            OpenPanel(curPanel);   
-            return curPanel.UIIndex;
+            OpenPanel(curPanel,data);   
+            return curPanel;
         }
 
-        private void OpenPanel(UIPanel panel)
+        private void OpenPanel(UIPanel panel,object data)
         {
             if (panel.State == UIState.None)
             {
                 panel.Create((p) =>
                 {
-                    panel.Open(true);
+                    panel.Open(data,true);
                 });
             }else if(panel.State != UIState.Opening && panel.State != UIState.Opened)
             {
-                panel.Open(true);
+                panel.Open(data,true);
             }
         }
 
@@ -109,12 +110,12 @@ namespace QDuck.UI
                         {
                             panel = _panelDisplayQueue[j];
                             bool curRootNode = (j == i) && (panel.StackInfo.Priority == curPanel.StackInfo.Priority);
-                            if (!panel.Info.NeedRetain && !curRootNode)
+                            if (!panel.NeedRetain && !curRootNode)
                             {
                                 panel.Destroy();
                             }
 
-                            if (panel.Info.NeedRetain || curRootNode)
+                            if (panel.NeedRetain || curRootNode)
                             {
                                 if (panel.StackInfo.StackType == PanelStackType.Push)
                                 {
@@ -193,7 +194,7 @@ namespace QDuck.UI
                     var panel = _panelHideStack[^1];
                     if (panel.StackInfo.Priority == uiPanel.StackInfo.Priority)
                     {
-                        OpenPanel(panel);
+                        OpenPanel(panel,null);
                         _panelDisplayQueue.Add(panel);
                         int counter = 1;
                         for (int i = _panelHideStack.Count - 2; i >= 0; i--)
@@ -201,7 +202,7 @@ namespace QDuck.UI
                             panel = _panelHideStack[i];
                             if (panel.StackInfo.Priority < uiPanel.StackInfo.Priority)
                             {
-                                OpenPanel(panel);
+                                OpenPanel(panel,null);
                                 _panelDisplayQueue.Add(panel);
                                 counter++;
                             }
@@ -213,35 +214,7 @@ namespace QDuck.UI
                 }
             }
         }
-
-        #region PanelDic
-
-        public void RegisterPanelInfo(string name, UIPanelInfo panelInfo)
-        {
-            _panelInfoDic[name] = panelInfo;
-        }
-
-        public UIPanelInfo GetPanelInfo(string name)
-        {
-            if (!_panelInfoDic.ContainsKey(name))
-            {
-                Debug.LogError("error!dont config this ui name!");
-            }
-
-            return _panelInfoDic[name];
-        }
-
-
-        #endregion
-
-        #region UILoader
-
-        public void LoadUIView(string uiName, Action<IUIBehavior> callback)
-        {
-            _uiLoader.Get(uiName, callback);
-        }
-
-        #endregion
+        
 
     }
 }
