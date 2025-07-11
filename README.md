@@ -16,5 +16,3 @@ https://github.com/QDuckGame/QDuckUI.git
 ![image-20241201200149430](image-20241201200149430.png)
 
 
-
-![](QDuckGameIcon.png)
